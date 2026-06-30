@@ -1,16 +1,14 @@
 FROM nikolaik/python-nodejs:python3.11-nodejs18
 
-# Instalar ffmpeg y dependencias necesarias
 RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
-# Asegurar que yt-dlp es la versión más reciente
-RUN pip install --upgrade yt-dlp
+# Instalamos la última versión directamente desde el repositorio
+RUN pip install --upgrade --force-reinstall https://github.com/yt-dlp/yt-dlp/archive/master.tar.gz
 
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
 
-# Exponer el puerto
 EXPOSE 3000
 CMD [ "node", "server.js" ]
