@@ -1,35 +1,23 @@
 const express = require('express');
+const { execSync } = require('child_process');
 const fs = require('fs');
-const { exec } = require('child_process');
+const path = require('path'); // <--- ESTO VA AQUÍ ARRIBA (Línea 4 aprox)
 
+// --- 1. DECLARACIÓN E INICIALIZACIÓN ---
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+
+// --- 2. RUTAS ---
+app.get('/health', (req, res) => res.status(200).send('OK'));
 
 app.post('/prepare', (req, res) => {
     const { url, inicio, fin, id } = req.body;
-    const cutFile = `/tmp/${id}_cut.mp4`;
-
-    console.log(`Iniciando proceso para ID: ${id}`);
-
-    // Comando FFmpeg
-    const command = `ffmpeg -i "${url}" -ss ${inicio} -to ${fin} -c copy ${cutFile}`;
-
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            console.error("Error en FFmpeg:", error);
-            return res.status(500).send("Error al procesar el video");
-        }
-
-        // Verificación de existencia antes de enviar
-        if (fs.existsSync(cutFile)) {
-            console.log("Archivo encontrado, enviando a n8n...");
-            res.sendFile(cutFile);
-        } else {
-            console.error("El archivo no se generó:", cutFile);
-            res.status(500).send("Error: El archivo no se creó correctamente");
-        }
-    });
-});
+    const raw = `/tmp/${id}_raw.mp4`;
+    const cut = `/tmp/${id}_cut.mp4`;
+    
+    // --- AQUÍ DEFINIMOS LA RUTA DE LAS COOKIES ---
+   // --- DEBBUGING: Verificar Cookies ---
+// Añadir esto antes de tu execSync(cmd) en /prepare
 const cookiesPath = '/app/cookies.txt'; // Ruta fija en el contenedor
 const fs = require('fs');
 
@@ -86,4 +74,4 @@ app.post('/burn', (req, res) => {
 
 // --- 3. INICIO DEL SERVIDOR ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor iniciado en puer
+app.listen(PORT, () => console.log(`Servidor iniciado en puerto ${PORT}`));
