@@ -11,19 +11,20 @@ app.post('/cut', (req, res) => {
     const outputFileName = '/tmp/output.mp4';
     const videoFile = '/tmp/video.mp4';
 
-    // Usamos --skip-download-archive para evitar verificaciones extra
-    // y --no-playlist para ir directo al video
-    const command = `yt-dlp --no-check-certificate --skip-download-archive --no-playlist -f "best[ext=mp4]" "${url}" -o "${videoFile}" && ffmpeg -y -i "${videoFile}" -ss ${inicio} -to ${fin} -c:v copy -c:a copy "${outputFileName}"`;
+    // Comando ultra-limpio para evitar errores de opciones no reconocidas
+    const command = `yt-dlp -f "best[ext=mp4]" "${url}" -o "${videoFile}" && ffmpeg -y -i "${videoFile}" -ss ${inicio} -to ${fin} -c:v copy -c:a copy "${outputFileName}"`;
 
     exec(command, (error, stdout, stderr) => {
         if (error) {
             console.error('Error:', stderr);
-            return res.status(500).send('Error procesando el video: ' + stderr);
+            return res.status(500).send('Error en procesamiento: ' + stderr);
         }
         
         res.download(outputFileName, 'clip.mp4', (err) => {
             if (err) console.error(err);
-            try { fs.unlinkSync(videoFile); fs.unlinkSync(outputFileName); } catch(e) {}
+            // Limpieza de archivos temporales
+            try { if (fs.existsSync(videoFile)) fs.unlinkSync(videoFile); } catch(e) {}
+            try { if (fs.existsSync(outputFileName)) fs.unlinkSync(outputFileName); } catch(e) {}
         });
     });
 });
