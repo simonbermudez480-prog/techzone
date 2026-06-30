@@ -9,15 +9,37 @@ app.use(express.json({ limit: '50mb' }));
 
 // --- 2. RUTAS ---
 app.get('/health', (req, res) => res.status(200).send('OK'));
+// --- COPIA ESTO COMPLETO EN TU SERVER.JS ---
+
+const fs = require('fs'); // Asegúrate de tener esto arriba, solo una vez.
+const { exec } = require('child_process');
 
 app.post('/prepare', (req, res) => {
     const { url, inicio, fin, id } = req.body;
-    const raw = `/tmp/${id}_raw.mp4`;
-    const cut = `/tmp/${id}_cut.mp4`;
-    
-    // --- AQUÍ DEFINIMOS LA RUTA DE LAS COOKIES ---
-   // --- DEBBUGING: Verificar Cookies ---
-// Añadir esto antes de tu execSync(cmd) en /prepare
+    const cutFile = `/tmp/${id}_cut.mp4`;
+
+    console.log(`Iniciando proceso para ID: ${id}`);
+
+    // Comando FFmpeg
+    const command = `ffmpeg -i "${url}" -ss ${inicio} -to ${fin} -c copy ${cutFile}`;
+
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error("Error en FFmpeg:", error);
+            return res.status(500).send("Error al procesar el video");
+        }
+
+        // Verificación de seguridad: ¿Existe el archivo realmente?
+        if (fs.existsSync(cutFile)) {
+            console.log("Archivo encontrado, enviando a n8n...");
+            res.sendFile(cutFile);
+        } else {
+            console.error("El archivo no se generó:", cutFile);
+            res.status(500).send("Error: El archivo no se creó correctamente");
+        }
+    });
+});
+
 const cookiesPath = '/app/cookies.txt'; // Ruta fija en el contenedor
 const fs = require('fs');
 
