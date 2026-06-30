@@ -17,17 +17,19 @@ app.post('/prepare', (req, res) => {
     
     // --- AQUÍ DEFINIMOS LA RUTA DE LAS COOKIES ---
    // --- DEBBUGING: Verificar Cookies ---
-const cookiesPath = path.join(__dirname, 'cookies.txt');
-const fileExists = fs.existsSync(cookiesPath);
-console.log(`¿Existe el archivo de cookies?: ${fileExists}`);
+// Añadir esto antes de tu execSync(cmd) en /prepare
+const cookiesPath = '/app/cookies.txt'; // Ruta fija en el contenedor
+const fs = require('fs');
 
-if (fileExists) {
-    const content = fs.readFileSync(cookiesPath, 'utf8');
-    console.log(`Primeros 50 caracteres de cookies: ${content.substring(0, 50)}`);
+if (fs.existsSync(cookiesPath)) {
+    console.log("¡ÉXITO! El archivo cookies.txt existe en /app/");
+    const stats = fs.statSync(cookiesPath);
+    console.log(`Tamaño del archivo: ${stats.size} bytes`);
 } else {
-    console.error("¡ERROR CRÍTICO! No se encuentra el archivo cookies.txt en: " + cookiesPath);
+    console.error("¡ERROR CRÍTICO! No se encuentra cookies.txt en /app/");
+    // Listamos el contenido de /app para ver dónde diablos está
+    console.log("Contenido de /app:", fs.readdirSync('/app'));
 }
-
     try {
         console.log(`Descargando: ${url}`);
         
