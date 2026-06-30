@@ -1,18 +1,9 @@
 const express = require('express');
-const { execSync } = require('child_process');
 const fs = require('fs');
-const path = require('path'); // <--- ESTO VA AQUÍ ARRIBA (Línea 4 aprox)
-
-// --- 1. DECLARACIÓN E INICIALIZACIÓN ---
-const app = express();
-app.use(express.json({ limit: '50mb' }));
-
-// --- 2. RUTAS ---
-app.get('/health', (req, res) => res.status(200).send('OK'));
-// --- COPIA ESTO COMPLETO EN TU SERVER.JS ---
-
-const fs = require('fs'); // Asegúrate de tener esto arriba, solo una vez.
 const { exec } = require('child_process');
+
+const app = express();
+app.use(express.json());
 
 app.post('/prepare', (req, res) => {
     const { url, inicio, fin, id } = req.body;
@@ -29,7 +20,7 @@ app.post('/prepare', (req, res) => {
             return res.status(500).send("Error al procesar el video");
         }
 
-        // Verificación de seguridad: ¿Existe el archivo realmente?
+        // Verificación de existencia antes de enviar
         if (fs.existsSync(cutFile)) {
             console.log("Archivo encontrado, enviando a n8n...");
             res.sendFile(cutFile);
@@ -39,7 +30,6 @@ app.post('/prepare', (req, res) => {
         }
     });
 });
-
 const cookiesPath = '/app/cookies.txt'; // Ruta fija en el contenedor
 const fs = require('fs');
 
