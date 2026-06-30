@@ -22,7 +22,6 @@ const cookiesPath = '/app/cookies.txt'; // Ruta fija en el contenedor
 
 
 if (fs.existsSync(cookiesPath)) {
-    const command = `ffmpeg -i "${url}" -ss ${inicio} -to ${fin} -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920" -c:a copy ${cut}`;
     console.log("¡ÉXITO! El archivo cookies.txt existe en /app/");
     const stats = fs.statSync(cookiesPath);
     console.log(`Tamaño del archivo: ${stats.size} bytes`);
