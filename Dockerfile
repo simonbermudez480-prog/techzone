@@ -1,17 +1,11 @@
-# Mantenemos la base de Playwright que es muy robusta
-FROM mcr.microsoft.com/playwright:v1.44.0-jammy
+# Esta imagen ya trae Python 3.11 y Node.js instalados.
+FROM nikolaik/python-nodejs:python3.11-nodejs18
 
-# Instalamos Python, FFmpeg y AHORA TAMBIÉN nodejs y npm
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    ffmpeg \
-    nodejs \
-    npm \
-    && rm -rf /var/lib/apt/lists/*
+# Solo necesitamos instalar ffmpeg.
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
-# Instalar yt-dlp y asegurarlo
-RUN pip3 install --upgrade yt-dlp
+# Actualizar yt-dlp a la última versión
+RUN pip install --upgrade yt-dlp
 
 WORKDIR /app
 COPY package*.json ./
