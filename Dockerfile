@@ -1,24 +1,23 @@
 # Usamos una imagen base que ya trae Node.js
-FROM node:18-bullseye-slim
+# Usamos una imagen base con una versión de Debian que soporta Python 3.11+
+FROM nikolaik/python-nodejs:python3.11-nodejs18
 
-# Instalamos las dependencias del sistema necesarias para video
+# Instalar dependencias necesarias
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
     ffmpeg \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalamos yt-dlp directamente desde su origen oficial
-RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
-    && chmod a+rx /usr/local/bin/yt-dlp
+# Actualizar pip y yt-dlp a la última versión
+RUN pip install --upgrade pip && \
+    pip install yt-dlp
 
-# Configuramos tu app
+# Configurar directorio de trabajo
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
 
-# Exponemos el puerto y arrancamos
+# Exponer puerto y ejecutar
 EXPOSE 3000
 CMD [ "node", "server.js" ]
