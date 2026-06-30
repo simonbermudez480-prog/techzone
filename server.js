@@ -6,20 +6,29 @@ app.use(express.json());
 
 app.post('/cut', (req, res) => {
     const { url, inicio, fin } = req.body;
-    const outputFileName = 'output.mp4';
+    
+    // Validamos que los datos lleguen bien
+    if (!url || !inicio || !fin) {
+        return res.status(400).send('Faltan parámetros: url, inicio o fin');
+    }
 
-    // Comando para descargar y cortar usando yt-dlp y ffmpeg
-    const command = `yt-dlp -f "best[ext=mp4]" "${url}" -o "video.mp4" && ffmpeg -i video.mp4 -ss ${inicio} -to ${fin} -c copy ${outputFileName}`;
+    // Usamos /tmp que es la carpeta temporal permitida en Railway
+    const outputFileName = '/tmp/output.mp4';
+    const videoFile = '/tmp/video.mp4';
+
+    // Descarga y corta
+    const command = `yt-dlp -f "best[ext=mp4]" "${url}" -o "${videoFile}" && ffmpeg -i "${videoFile}" -ss ${inicio} -to ${fin} -c copy "${outputFileName}"`;
 
     exec(command, (error) => {
-        if (error) return res.status(500).send('Error procesando el video');
+        if (error) {
+            console.error(error);
+            return res.status(500).send('Error procesando el video: ' + error.message);
+        }
         
-        // Enviamos el archivo resultante a n8n
-        res.download(outputFileName, (err) => {
-            if (err) console.log(err);
-            // Limpieza: borrar archivos temporales
-            fs.unlinkSync('video.mp4');
-            fs.unlinkSync(outputFileName);
+        res.download(outputFileName, 'clip.mp4', (err) => {
+            if (err) console.error(err);
+            // Limpieza
+            try { fs.unlinkSync(videoFile); fs.unlinkSync(outputFileName); } catch(e) {}
         });
     });
 });
