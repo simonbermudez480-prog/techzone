@@ -4,21 +4,20 @@ app.post('/prepare', (req, res) => {
     const cut = `/tmp/${id}_cut.mp4`;
 
     try {
-        console.log(`Iniciando descarga de: ${url}`);
-        
-        // --- AQUÍ ES DONDE VA EL COMANDO JS (DENTRO DEL EXECSYNC) ---
-        // Este es el comando exacto que soluciona el error de "runtime" y "bot"
-        const cmd = `yt-dlp --js-exec "node" --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" -f "best[ext=mp4]" "${url}" -o "${raw}"`;
+        // Ejecutamos el comando forzando el uso de 'node' como runtime
+        // Esto soluciona: "No supported JavaScript runtime"
+        const cmd = `yt-dlp --js-exec "node" -f "best[ext=mp4]" "${url}" -o "${raw}"`;
         execSync(cmd);
-        // -----------------------------------------------------------
-
-        console.log("Descarga completada. Iniciando ffmpeg...");
+        
+        // Recortar con ffmpeg
         execSync(`ffmpeg -y -i "${raw}" -ss ${inicio} -to ${fin} -c copy "${cut}"`);
         
         if(fs.existsSync(raw)) fs.unlinkSync(raw);
         res.status(200).send("Video listo");
+        
     } catch (e) {
-        console.error("Error detectado:", e);
-        res.status(500).send("Error interno: " + e.message);
+        // Aquí evitamos que el servidor se caiga (502)
+        console.error("Error crítico durante la descarga:", e.message);
+        res.status(500).send("Error interno del servidor: " + e.message);
     }
 });
