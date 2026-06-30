@@ -4,44 +4,28 @@ const fs = require('fs');
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 
+// Ruta de salud para que Railway sepa que el server está vivo
+app.get('/health', (req, res) => res.status(200).send('OK'));
+
 app.post('/prepare', (req, res) => {
     const { url, inicio, fin, id } = req.body;
     const raw = `/tmp/${id}_raw.mp4`;
     const cut = `/tmp/${id}_cut.mp4`;
 
     try {
-        // Comando básico y seguro
+        console.log(`Iniciando descarga: ${url}`);
         execSync(`yt-dlp -f "best[ext=mp4]" "${url}" -o "${raw}"`);
+        console.log("Descarga completa, iniciando recorte...");
         execSync(`ffmpeg -y -i "${raw}" -ss ${inicio} -to ${fin} -c copy "${cut}"`);
         
         if(fs.existsSync(raw)) fs.unlinkSync(raw);
         res.status(200).send("Video listo");
     } catch (e) {
-        console.error("Error en /prepare:", e);
-        res.status(500).send(e.message);
+        console.error("Error crítico:", e);
+        res.status(500).send("Error interno: " + e.message);
     }
 });
 
-app.post('/burn', (req, res) => {
-    const { id, srtContent } = req.body;
-    const cut = `/tmp/${id}_cut.mp4`;
-    const srt = `/tmp/${id}.srt`;
-    const final = `/tmp/${id}_final.mp4`;
-
-    try {
-        if (!srtContent) throw new Error("Falta contenido SRT");
-        fs.writeFileSync(srt, srtContent);
-        
-        const filter = "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,subtitles='" + srt + "':force_style='FontSize=24'";
-        execSync(`ffmpeg -y -i "${cut}" -vf "${filter}" -c:v libx264 -preset ultrafast "${final}"`);
-        
-        res.download(final, 'final.mp4', () => {
-            [cut, srt, final].forEach(f => { if(fs.existsSync(f)) fs.unlinkSync(f); });
-        });
-    } catch (e) {
-        console.error("Error en /burn:", e);
-        res.status(500).send(e.message);
-    }
-});
-
-app.listen(3000);
+// Arrancamos el server forzando el puerto que Railway asigne
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
