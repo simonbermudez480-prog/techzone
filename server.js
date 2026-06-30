@@ -12,39 +12,14 @@ app.get('/health', (req, res) => res.status(200).send('OK'));
 
 app.post('/prepare', (req, res) => {
     const { url, inicio, fin, id } = req.body;
+    const raw = `/tmp/${id}_raw.mp4`;
+    const cut = `/tmp/${id}_cut.mp4`;
     
-    // Ruta donde se guardará el archivo procesado
-    const cutFile = `/tmp/${id}_cut.mp4`;
-
-    // Comando FFmpeg (asegúrate de que tu cadena de comando sea la correcta para tu uso)
-    const command = `ffmpeg -i "${url}" -ss ${inicio} -to ${fin} -c copy ${cutFile}`;
-
-    console.log(`Iniciando corte para el ID: ${id}`);
-
-    // Ejecutamos el comando
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error de FFmpeg: ${error.message}`);
-            return res.status(500).json({ error: "Error procesando el video", details: error.message });
-        }
-
-        // Una vez que FFmpeg termina, enviamos el archivo
-        res.sendFile(cutFile, (err) => {
-            if (err) {
-                console.error("Error enviando el archivo:", err);
-                res.status(500).send("No se pudo enviar el archivo resultante");
-            } else {
-                console.log("Video enviado correctamente a n8n");
-            }
-        });
-    });
-});
-
     // --- AQUÍ DEFINIMOS LA RUTA DE LAS COOKIES ---
    // --- DEBBUGING: Verificar Cookies ---
 // Añadir esto antes de tu execSync(cmd) en /prepare
 const cookiesPath = '/app/cookies.txt'; // Ruta fija en el contenedor
-
+const fs = require('fs');
 
 if (fs.existsSync(cookiesPath)) {
     console.log("¡ÉXITO! El archivo cookies.txt existe en /app/");
@@ -99,4 +74,4 @@ app.post('/burn', (req, res) => {
 
 // --- 3. INICIO DEL SERVIDOR ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor iniciado en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor iniciado en puer
