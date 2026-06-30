@@ -1,17 +1,19 @@
 FROM node:18-bookworm
 
-# Instalamos dependencias necesarias para audio y video
+# Instalamos ffmpeg y las herramientas necesarias de una sola vez
 RUN apt-get update && apt-get install -y \
     ffmpeg \
-    python3 \
     python3-pip \
-    curl \
+    python3-venv \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalamos whisper y yt-dlp
-RUN pip3 install --upgrade pip
-RUN pip3 install openai-whisper yt-dlp --break-system-packages
+# Creamos un entorno virtual para python para evitar el error PEP 668
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Instalamos las librerías dentro del entorno virtual
+RUN pip install --no-cache-dir openai-whisper yt-dlp
 
 WORKDIR /app
 COPY package*.json ./
