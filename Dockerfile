@@ -1,19 +1,22 @@
-FROM node:18-bookworm
+FROM node:18-slim
 
-# Instalamos ffmpeg y python3-pip
+# Instalar dependencias necesarias para yt-dlp y ffmpeg
 RUN apt-get update && apt-get install -y \
-    ffmpeg \
+    python3 \
     python3-pip \
-    git \
+    ffmpeg \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalamos la última versión de yt-dlp y aseguramos que esté actualizada
-RUN pip3 install --break-system-packages yt-dlp
+# Instalar yt-dlp usando pip
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
+    && chmod a+rx /usr/local/bin/yt-dlp
 
+# Configurar directorio de trabajo
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD [ "node", "server.js" ]
