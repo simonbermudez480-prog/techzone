@@ -11,13 +11,13 @@ app.post('/cut', (req, res) => {
     const outputFileName = '/tmp/output.mp4';
     const videoFile = '/tmp/video.mp4';
 
-    // Usamos --no-check-certificate por si acaso y forzamos el formato
-    const command = `yt-dlp -U && yt-dlp -f "best[ext=mp4]" "${url}" -o "${videoFile}" && ffmpeg -y -i "${videoFile}" -ss ${inicio} -to ${fin} -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920" -c:v libx264 -preset ultrafast -c:a aac "${outputFileName}"`;
+    // CAMUFLAJE: Añadimos --user-agent y --geo-bypass para evitar el error 429
+    const command = `yt-dlp --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" --geo-bypass -f "best[ext=mp4]" "${url}" -o "${videoFile}" && ffmpeg -y -i "${videoFile}" -ss ${inicio} -to ${fin} -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920" -c:v libx264 -preset ultrafast -c:a aac "${outputFileName}"`;
 
     exec(command, (error, stdout, stderr) => {
         if (error) {
             console.error('Error:', stderr);
-            return res.status(500).send('Error: ' + stderr);
+            return res.status(500).send('Error YouTube (429): ' + stderr);
         }
         res.download(outputFileName, 'clip_vertical.mp4', () => {
             try { if (fs.existsSync(videoFile)) fs.unlinkSync(videoFile); } catch(e) {}
