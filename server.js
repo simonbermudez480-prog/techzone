@@ -31,7 +31,33 @@ app.post('/prepare', (req, res) => {
         res.status(500).send("Error: " + e.message);
     }
 });
+app.post('/burn', (req, res) => {
+    const { id, srtContent } = req.body;
+    const cut = `/tmp/${id}_cut.mp4`;
+    const srt = `/tmp/${id}.srt`;
+    const final = `/tmp/${id}_final.mp4`;
 
+    try {
+        // 1. Guardar los subtítulos recibidos
+        fs.writeFileSync(srt, srtContent);
+        
+        // 2. Quemar los subtítulos con ffmpeg
+        // (Asegúrate de tener ffmpeg instalado en el Dockerfile)
+        execSync(`ffmpeg -y -i "${cut}" -vf "subtitles='${srt}':force_style='FontSize=24'" -c:v libx264 -preset ultrafast "${final}"`);
+        
+        // 3. ENVIAR EL ARCHIVO FINAL
+        res.download(final, 'video_final.mp4', () => {
+            // Limpieza: borrar todo lo temporal al terminar
+            [cut, srt, final].forEach(f => { if(fs.existsSync(f)) fs.unlinkSync(f); });
+        });
+        
+    } catch (e) {
+        console.error("Error en /burn:", e.message);
+        res.status(500).send("Error procesando subtítulos: " + e.message);
+    }
+});
 // --- 3. INICIO DEL SERVIDOR ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor iniciado en puerto ${PORT}`));
+
+
