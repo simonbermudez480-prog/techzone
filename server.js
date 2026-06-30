@@ -15,29 +15,30 @@ app.post('/prepare', (req, res) => {
     const cut = `/tmp/${id}_cut.mp4`;
 
     try {
-        console.log(`Descargando: ${url}`);
-        execSync(`yt-dlp --no-check-certificate -f "best[ext=mp4]" "${url}" -o "${raw}"`);
+        console.log(`Intentando descargar: ${url}`);
         
-        console.log("Recortando...");
+        // --- CAMBIOS CLAVE EN EL COMANDO ---
+        // 1. --user-agent: Engaña a YouTube haciéndole creer que es un navegador Chrome.
+        // 2. --js-exec node: Fuerza el uso de node para el JS runtime.
+        const cmd = `yt-dlp --no-check-certificate --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" --js-exec "node" -f "best[ext=mp4]" "${url}" -o "${raw}"`;
+        
+        execSync(cmd);
+        
+        console.log("Descarga exitosa. Recortando...");
         execSync(`ffmpeg -y -i "${raw}" -ss ${inicio} -to ${fin} -c copy "${cut}"`);
         
-        // BORRAR el original pesado, dejar solo el cortado
+        // Limpiamos el pesado
         if(fs.existsSync(raw)) fs.unlinkSync(raw);
 
-        // --- AQUÍ ESTÁ EL CAMBIO ---
-        // Enviamos el archivo directamente a n8n
+        // Enviamos el archivo
         res.download(cut, 'video.mp4', (err) => {
-            if (err) {
-                console.error("Error al enviar archivo:", err);
-            } else {
-                // Borramos el archivo del servidor solo DESPUÉS de que se envió
-                if(fs.existsSync(cut)) fs.unlinkSync(cut);
-            }
+            if (!err && fs.existsSync(cut)) fs.unlinkSync(cut);
         });
         
     } catch (e) {
-        console.error("Error:", e.message);
-        res.status(500).send("Error: " + e.message);
+        console.error("Error en /prepare:", e.message);
+        // Si falla yt-dlp, es probable que sea por IP bloqueada.
+        res.status(500).send("Fallo en descarga: " + e.message);
     }
 });
 app.post('/burn', (req, res) => {
