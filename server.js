@@ -1,6 +1,7 @@
 const express = require('express');
 const { execSync } = require('child_process');
 const fs = require('fs');
+const path = require('path'); // <--- ESTO VA AQUÍ ARRIBA (Línea 4 aprox)
 
 // --- 1. DECLARACIÓN E INICIALIZACIÓN ---
 const app = express();
@@ -13,12 +14,15 @@ app.post('/prepare', (req, res) => {
     const { url, inicio, fin, id } = req.body;
     const raw = `/tmp/${id}_raw.mp4`;
     const cut = `/tmp/${id}_cut.mp4`;
+    
+    // --- AQUÍ DEFINIMOS LA RUTA DE LAS COOKIES ---
+    const cookiesPath = path.join(__dirname, 'cookies.txt');
 
     try {
-        console.log(`Descargando con cookies: ${url}`);
+        console.log(`Descargando: ${url}`);
         
-        // Usamos --cookies para pasar como un usuario real y quitamos los flags que fallaban
-        const cmd = `yt-dlp --no-check-certificate --cookies cookies.txt -f "best[ext=mp4]" "${url}" -o "${raw}"`;
+        // --- ESTE ES EL COMANDO QUE DEBES PONER DENTRO DE LA RUTA ---
+        const cmd = `yt-dlp --no-check-certificate --cookies "${cookiesPath}" --extractor-args "youtube:player-client=android" --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" -f "best[ext=mp4]" "${url}" -o "${raw}"`;
         
         execSync(cmd);
         
@@ -28,14 +32,16 @@ app.post('/prepare', (req, res) => {
         if(fs.existsSync(raw)) fs.unlinkSync(raw);
 
         res.download(cut, 'video.mp4', (err) => {
-            if (!err && fs.existsSync(cut)) fs.unlinkSync(cut);
+            if (err) console.error("Error al enviar:", err);
+            else if(fs.existsSync(cut)) fs.unlinkSync(cut);
         });
         
     } catch (e) {
         console.error("Error en /prepare:", e.message);
-        res.status(500).send("Error crítico: " + e.message);
+        res.status(500).send("Error: " + e.message);
     }
 });
+
 app.post('/burn', (req, res) => {
     const { id, srtContent } = req.body;
     const cut = `/tmp/${id}_cut.mp4`;
@@ -43,26 +49,17 @@ app.post('/burn', (req, res) => {
     const final = `/tmp/${id}_final.mp4`;
 
     try {
-        // 1. Guardar los subtítulos recibidos
         fs.writeFileSync(srt, srtContent);
-        
-        // 2. Quemar los subtítulos con ffmpeg
-        // (Asegúrate de tener ffmpeg instalado en el Dockerfile)
         execSync(`ffmpeg -y -i "${cut}" -vf "subtitles='${srt}':force_style='FontSize=24'" -c:v libx264 -preset ultrafast "${final}"`);
         
-        // 3. ENVIAR EL ARCHIVO FINAL
         res.download(final, 'video_final.mp4', () => {
-            // Limpieza: borrar todo lo temporal al terminar
             [cut, srt, final].forEach(f => { if(fs.existsSync(f)) fs.unlinkSync(f); });
         });
-        
     } catch (e) {
-        console.error("Error en /burn:", e.message);
-        res.status(500).send("Error procesando subtítulos: " + e.message);
+        res.status(500).send("Error: " + e.message);
     }
 });
+
 // --- 3. INICIO DEL SERVIDOR ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor iniciado en puerto ${PORT}`));
-
-
