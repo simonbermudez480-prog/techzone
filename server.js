@@ -1,5 +1,5 @@
 const express = require('express');
-const { execSync } = require('child_process');
+const { exec } = require('child_process');
 const fs = require('fs');
 const app = express();
 app.use(express.json());
@@ -8,31 +8,23 @@ app.post('/cut', (req, res) => {
     const { url, inicio, fin } = req.body;
     if (!url || !inicio || !fin) return res.status(400).send('Faltan parámetros');
 
+    const outputFileName = '/tmp/output.mp4';
     const videoFile = '/tmp/video.mp4';
-    const outputFileName = '/tmp/output_sub.mp4';
-    const srtFile = '/tmp/output_sub.srt';
-    const finalFile = '/tmp/final.mp4';
 
-    try {
-        // 1. Descarga y corte directo (ya sabemos que funciona bien)
-        execSync(`yt-dlp -f "best[ext=mp4]" "${url}" -o "${videoFile}"`);
-        execSync(`ffmpeg -y -i "${videoFile}" -ss ${inicio} -to ${fin} -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920" -c:v libx264 -preset ultrafast -c:a aac "${outputFileName}"`);
+    // Comando estable: descarga, corta, y da formato vertical 9:16
+    const command = `yt-dlp -f "best[ext=mp4]" "${url}" -o "${videoFile}" && ffmpeg -y -i "${videoFile}" -ss ${inicio} -to ${fin} -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920" -c:v libx264 -preset ultrafast -c:a aac "${outputFileName}"`;
 
-        // 2. Generación de subtítulos con modelo 'tiny' (muy rápido)
-        execSync(`whisper "${outputFileName}" --model tiny --output_format srt --output_dir /tmp/`);
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error('Error:', stderr);
+            return res.status(500).send('Error en procesamiento: ' + stderr);
+        }
         
-        // 3. Incrustado rápido
-        execSync(`ffmpeg -y -i "${outputFileName}" -vf "subtitles='${srtFile}':force_style='FontSize=24,PrimaryColour=&H00FFFF&'" -c:a copy "${finalFile}"`);
-
-        res.download(finalFile, 'clip_viral.mp4', () => {
-             // Limpieza
-             [videoFile, outputFileName, srtFile, finalFile].forEach(f => { if(fs.existsSync(f)) fs.unlinkSync(f); });
+        res.download(outputFileName, 'clip_vertical.mp4', (err) => {
+            try { if (fs.existsSync(videoFile)) fs.unlinkSync(videoFile); } catch(e) {}
+            try { if (fs.existsSync(outputFileName)) fs.unlinkSync(outputFileName); } catch(e) {}
         });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Error procesando subtítulos: ' + error.message);
-    }
+    });
 });
 
 app.listen(process.env.PORT || 3000, '0.0.0.0');
