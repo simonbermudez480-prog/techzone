@@ -28,7 +28,7 @@ res.sendFile(cutFile, (err) => {
     } else {
         console.log("Archivo enviado con éxito");
     }
-});
+
 });
     // --- AQUÍ DEFINIMOS LA RUTA DE LAS COOKIES ---
    // --- DEBBUGING: Verificar Cookies ---
