@@ -21,11 +21,14 @@ const cutFile = `/tmp/${id}_cut.mp4`;
 // ... (aquí ejecutas tu lógica de descarga o FFmpeg) ...
 
 // ESTO ES LO QUE DEBES DEVOLVER A N8N
-res.json({
-    status: "success",
-    id: id,
-    rawFile: rawFile,
-    cutFile: cutFile
+res.sendFile(cutFile, (err) => {
+    if (err) {
+        console.error("Error enviando el archivo:", err);
+        res.status(500).send("No se pudo enviar el archivo");
+    } else {
+        console.log("Archivo enviado con éxito");
+    }
+});
 });
     // --- AQUÍ DEFINIMOS LA RUTA DE LAS COOKIES ---
    // --- DEBBUGING: Verificar Cookies ---
