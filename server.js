@@ -15,19 +15,28 @@ app.post('/prepare', (req, res) => {
     const cut = `/tmp/${id}_cut.mp4`;
 
     try {
-        console.log(`Procesando: ${url}`);
-        
-        // Comando puro sin flags experimentales
-        // yt-dlp detectará node automáticamente en esta imagen base
+        console.log(`Descargando: ${url}`);
         execSync(`yt-dlp --no-check-certificate -f "best[ext=mp4]" "${url}" -o "${raw}"`);
         
         console.log("Recortando...");
         execSync(`ffmpeg -y -i "${raw}" -ss ${inicio} -to ${fin} -c copy "${cut}"`);
         
+        // BORRAR el original pesado, dejar solo el cortado
         if(fs.existsSync(raw)) fs.unlinkSync(raw);
-        res.status(200).send("Video listo");
+
+        // --- AQUÍ ESTÁ EL CAMBIO ---
+        // Enviamos el archivo directamente a n8n
+        res.download(cut, 'video.mp4', (err) => {
+            if (err) {
+                console.error("Error al enviar archivo:", err);
+            } else {
+                // Borramos el archivo del servidor solo DESPUÉS de que se envió
+                if(fs.existsSync(cut)) fs.unlinkSync(cut);
+            }
+        });
+        
     } catch (e) {
-        console.error("Error en /prepare:", e.message);
+        console.error("Error:", e.message);
         res.status(500).send("Error: " + e.message);
     }
 });
