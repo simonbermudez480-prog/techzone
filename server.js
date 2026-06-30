@@ -16,7 +16,17 @@ app.post('/prepare', (req, res) => {
     const cut = `/tmp/${id}_cut.mp4`;
     
     // --- AQUÍ DEFINIMOS LA RUTA DE LAS COOKIES ---
-    const cookiesPath = path.join(__dirname, 'cookies.txt');
+   // --- DEBBUGING: Verificar Cookies ---
+const cookiesPath = path.join(__dirname, 'cookies.txt');
+const fileExists = fs.existsSync(cookiesPath);
+console.log(`¿Existe el archivo de cookies?: ${fileExists}`);
+
+if (fileExists) {
+    const content = fs.readFileSync(cookiesPath, 'utf8');
+    console.log(`Primeros 50 caracteres de cookies: ${content.substring(0, 50)}`);
+} else {
+    console.error("¡ERROR CRÍTICO! No se encuentra el archivo cookies.txt en: " + cookiesPath);
+}
 
     try {
         console.log(`Descargando: ${url}`);
