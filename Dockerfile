@@ -1,10 +1,10 @@
 FROM nikolaik/python-nodejs:python3.11-nodejs18
 
-# Solo instalamos lo estrictamente necesario
-RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+# Instalamos dependencias necesarias para que yt-dlp no sufra
+RUN apt-get update && apt-get install -y ffmpeg curl python3-pip && rm -rf /var/lib/apt/lists/*
 
-# Actualizamos yt-dlp a la versión más reciente desde el repo
-RUN pip install --upgrade --force-reinstall https://github.com/yt-dlp/yt-dlp/archive/master.tar.gz
+# Aseguramos la última versión de yt-dlp
+RUN pip install --upgrade yt-dlp
 
 WORKDIR /app
 COPY package*.json ./
