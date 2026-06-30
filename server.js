@@ -19,7 +19,7 @@ app.post('/prepare', (req, res) => {
    // --- DEBBUGING: Verificar Cookies ---
 // Añadir esto antes de tu execSync(cmd) en /prepare
 const cookiesPath = '/app/cookies.txt'; // Ruta fija en el contenedor
-const fs = require('fs');
+
 
 if (fs.existsSync(cookiesPath)) {
     console.log("¡ÉXITO! El archivo cookies.txt existe en /app/");
