@@ -1,13 +1,14 @@
-FROM nikolaik/python-nodejs:python3.11-nodejs18
+FROM mcr.microsoft.com/playwright:v1.44.0-jammy
 
-# Instalar ffmpeg y dependencias
-RUN apt-get update && apt-get install -y ffmpeg curl && rm -rf /var/lib/apt/lists/*
+# Instalar Node.js y Python necesarios
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
-# Asegurar que yt-dlp está actualizado
-RUN pip install --upgrade yt-dlp
-
-# Instalar nodejs explícitamente para que yt-dlp lo encuentre
-RUN apt-get update && apt-get install -y nodejs npm
+# Instalar yt-dlp
+RUN pip3 install --upgrade yt-dlp
 
 WORKDIR /app
 COPY package*.json ./
