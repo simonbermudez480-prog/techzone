@@ -12,7 +12,8 @@ app.post('/prepare', (req, res) => {
     
     try {
         // Usamos --skip-download-key "js" para evitar el error de runtime JS
-        execSync(`yt-dlp --skip-download-key "js" --geo-bypass --no-check-certificate -f "best[ext=mp4]" "${url}" -o "${raw}"`);
+        // Usamos solo --no-check-certificate para evitar errores de red comunes
+        execSync(`yt-dlp --no-check-certificate -f "best[ext=mp4]" "${url}" -o "${raw}"`);
         execSync(`ffmpeg -y -i "${raw}" -ss ${inicio} -to ${fin} -c copy "${cut}"`);
         
         if(fs.existsSync(raw)) fs.unlinkSync(raw);
