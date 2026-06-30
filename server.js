@@ -12,9 +12,21 @@ app.get('/health', (req, res) => res.status(200).send('OK'));
 
 app.post('/prepare', (req, res) => {
     const { url, inicio, fin, id } = req.body;
-    const raw = `/tmp/${id}_raw.mp4`;
-    const cut = `/tmp/${id}_cut.mp4`;
-    
+    // --- COPIA Y PEGA ESTO EN TU SERVIDOR ---
+
+// Asegúrate de que el nombre del archivo use el ID
+const rawFile = `/tmp/${id}_raw.mp4`; 
+const cutFile = `/tmp/${id}_cut.mp4`; 
+
+// ... (aquí ejecutas tu lógica de descarga o FFmpeg) ...
+
+// ESTO ES LO QUE DEBES DEVOLVER A N8N
+res.json({
+    status: "success",
+    id: id,
+    rawFile: rawFile,
+    cutFile: cutFile
+});
     // --- AQUÍ DEFINIMOS LA RUTA DE LAS COOKIES ---
    // --- DEBBUGING: Verificar Cookies ---
 // Añadir esto antes de tu execSync(cmd) en /prepare
