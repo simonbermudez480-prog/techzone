@@ -15,30 +15,25 @@ app.post('/prepare', (req, res) => {
     const cut = `/tmp/${id}_cut.mp4`;
 
     try {
-        console.log(`Intentando descargar: ${url}`);
+        console.log(`Descargando con cookies: ${url}`);
         
-        // --- CAMBIOS CLAVE EN EL COMANDO ---
-        // 1. --user-agent: Engaña a YouTube haciéndole creer que es un navegador Chrome.
-        // 2. --js-exec node: Fuerza el uso de node para el JS runtime.
-        const cmd = `yt-dlp --no-check-certificate --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" --js-exec "node" -f "best[ext=mp4]" "${url}" -o "${raw}"`;
+        // Usamos --cookies para pasar como un usuario real y quitamos los flags que fallaban
+        const cmd = `yt-dlp --no-check-certificate --cookies cookies.txt -f "best[ext=mp4]" "${url}" -o "${raw}"`;
         
         execSync(cmd);
         
-        console.log("Descarga exitosa. Recortando...");
+        console.log("Recortando...");
         execSync(`ffmpeg -y -i "${raw}" -ss ${inicio} -to ${fin} -c copy "${cut}"`);
         
-        // Limpiamos el pesado
         if(fs.existsSync(raw)) fs.unlinkSync(raw);
 
-        // Enviamos el archivo
         res.download(cut, 'video.mp4', (err) => {
             if (!err && fs.existsSync(cut)) fs.unlinkSync(cut);
         });
         
     } catch (e) {
         console.error("Error en /prepare:", e.message);
-        // Si falla yt-dlp, es probable que sea por IP bloqueada.
-        res.status(500).send("Fallo en descarga: " + e.message);
+        res.status(500).send("Error crítico: " + e.message);
     }
 });
 app.post('/burn', (req, res) => {
