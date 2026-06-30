@@ -1,6 +1,7 @@
-FROM node:18-bullseye
+# Usamos Debian Bookworm (versión 12) que incluye Python 3.11+
+FROM node:18-bookworm
 
-# Instalamos ffmpeg, python3, pip y herramientas de sistema
+# Instalamos ffmpeg, python3, y pip
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
@@ -8,9 +9,8 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalamos yt-dlp directamente desde su repositorio oficial para asegurar compatibilidad
-RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
-    && chmod a+rx /usr/local/bin/yt-dlp
+# Instalamos la última versión de yt-dlp usando pip3 (con --break-system-packages para asegurar la instalación)
+RUN pip3 install yt-dlp --break-system-packages
 
 WORKDIR /app
 COPY package*.json ./
